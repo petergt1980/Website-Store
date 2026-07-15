@@ -184,7 +184,37 @@
             <button class="btn-secondary w-100 mt-2" onclick="closeModal('edit-product-modal')">Cancel</button>
         </div>
     </div>
+<!-- Tambahkan library Firebase ini -->
+    <script type="module">
+        // Import Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, addDoc, updateDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        // GANTI DENGAN CONFIG ANDA DARI LANGKAH 1
+        const firebaseConfig = {
+            apiKey: "AIzaSyCbrk7MjniiXZjiEUJJM-HxcJ9OOHeelm0",
+            authDomain: "dapesdkk.firebaseapp.com",
+            projectId: "dapesdkk",
+            storageBucket: "dapesdkk.firebasestorage.app",
+            messagingSenderId: "99895649080",
+            appId: "1:99895649080:web:cbc98a448979f7bfd817cd"
+        };
+
+        // Inisialisasi Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Export db agar bisa dipakai di app.js
+        window.db = db;
+        window.collection = collection;
+        window.getDocs = getDocs;
+        window.addDoc = addDoc;
+        window.updateDoc = updateDoc;
+        window.doc = doc;
+        window.deleteDoc = deleteDoc;
+    </script>
+    
+    <!-- Script app.js Anda tetap di bawahnya -->
     <script src="app.js"></script>
 </body>
 </html>
