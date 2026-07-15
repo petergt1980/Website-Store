@@ -171,7 +171,7 @@ const processCheckout = () => {
 };
 
 const formatCheckoutMessage = () => {
-    let msg = `Halo Admin CRIMSON,\nSaya ingin membeli produk berikut:\n\n`;
+    let msg = `Halo Admin DapesDKK,\nSaya ingin membeli produk berikut:\n\n`;
     cart.forEach(i => msg += `- ${i.name} (${formatRupiah(i.price)})\n`);
     msg += `\n*Total Bayar:* ${document.getElementById('cart-total').innerText}\n`;
     msg += `*Username Akun:* ${currentUser.username}\n\nMohon info pembayarannya, terima kasih.`;
