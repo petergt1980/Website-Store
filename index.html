@@ -210,10 +210,9 @@
             appId: "1:99895649080:web:cbc98a448979f7bfd817cd"
         };
 
-        // Inisialisasi Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
+// Ganti bagian getFirestore(app) menjadi:
+const db = getFirestore(app, '(default)'); 
+window.db = db;
         // Export db agar bisa dipakai di app.js
         window.db = db;
         window.collection = collection;
