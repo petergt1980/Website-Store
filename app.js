@@ -1,12 +1,6 @@
-// --- Database Mockup (LocalStorage) ---
-const defaultProducts = [
-    { id: 'p1', name: 'CRIMSON VIP Panel', category: 'Panel', price: 150000, icon: 'fa-gauge-high', desc: 'Full feature VIP panel with anti-ban system.' },
-    { id: 'p2', name: 'Phantom Executor', category: 'Executor', price: 200000, icon: 'fa-terminal', desc: 'Lightweight executor, bypasses most anti-cheats.' },
-    { id: 'p3', name: 'Auto Headshot Config', category: 'Config', price: 50000, icon: 'fa-crosshairs', desc: 'Optimized config for maximum precision.' }
-];
-
+// --- Database User Mockup (LocalStorage) ---
+// Kita biarkan user pakai localStorage agar sistem login/register prototype tetap berjalan
 const initDB = () => {
-    if (!localStorage.getItem('crs_products')) localStorage.setItem('crs_products', JSON.stringify(defaultProducts));
     if (!localStorage.getItem('crs_users')) {
         const admin = { username: 'admin', pass: 'admin123', role: 'admin', purchases: [] };
         localStorage.setItem('crs_users', JSON.stringify([admin]));
@@ -16,10 +10,29 @@ const initDB = () => {
 let currentUser = null;
 let cart = [];
 let currentCategory = 'All';
+let globalProducts = []; // Menyimpan data sementara dari Firebase agar loading cepat
 
-window.onload = () => {
+// --- Fetch Data dari Firebase ---
+const fetchProductsFromDB = async () => {
+    try {
+        const querySnapshot = await window.getDocs(window.collection(window.db, "products"));
+        let products = [];
+        querySnapshot.forEach((doc) => {
+            // Menggabungkan ID document Firebase dengan isi datanya
+            products.push({ id: doc.id, ...doc.data() });
+        });
+        globalProducts = products; // Simpan ke variabel global
+        return products;
+    } catch (error) {
+        console.error("Error mengambil data dari Firebase: ", error);
+        return []; 
+    }
+};
+
+window.onload = async () => {
     initDB();
     checkSession();
+    await fetchProductsFromDB(); // Download data produk dari Firebase saat web dibuka
     renderProducts();
 };
 
@@ -90,10 +103,8 @@ const logout = () => {
 };
 
 // --- Store & Products ---
-const getProducts = () => JSON.parse(localStorage.getItem('crs_products'));
-
 const renderProducts = (searchQuery = '') => {
-    const products = getProducts();
+    const products = globalProducts; // Ambil dari data yg sudah didownload
     const homeContainer = document.getElementById('home-products');
     const storeContainer = document.getElementById('store-products');
     
@@ -125,7 +136,7 @@ const filterProducts = () => renderProducts(document.getElementById('search-inpu
 
 // --- Cart & Checkout (WA/Discord Redirect) ---
 const addToCart = (id) => {
-    cart.push(getProducts().find(p => p.id === id));
+    cart.push(globalProducts.find(p => p.id === id));
     document.getElementById('cart-count').innerText = cart.length;
     showToast(`Added to cart!`);
 };
@@ -179,15 +190,14 @@ const formatCheckoutMessage = () => {
 };
 
 const checkoutViaWA = () => {
-    const waNumber = "6285604788705"; // GANTI DENGAN NOMOR WA ADMIN (Gunakan 62 di awal)
+    const waNumber = "6285604788705"; 
     const text = formatCheckoutMessage();
     window.open(`https://wa.me/${waNumber}?text=${text}`, '_blank');
     clearCartAfterCheckout();
 };
 
 const checkoutViaDiscord = () => {
-    // Arahkan ke link server discord atau tiket / direct message user ID
-    const discordLink = "https://discord.gg/M2TER3dvG3"; // GANTI DENGAN LINK DISCORD
+    const discordLink = "https://discord.gg/M2TER3dvG3"; 
     window.open(discordLink, '_blank');
     clearCartAfterCheckout();
 };
@@ -207,74 +217,108 @@ const loadProfileData = () => {
     document.getElementById('order-history').innerHTML = '<p class="text-muted">Pembelian menunggu konfirmasi/pemberian manual oleh Admin via Chat.</p>';
 };
 
-// --- Admin Panel (CRUD) ---
+// --- Admin Panel (CRUD to Firebase) ---
 let editProductId = null;
 
 const loadAdminData = () => {
-    const products = getProducts();
+    const products = globalProducts;
     const tbody = document.getElementById('admin-product-list');
-    tbody.innerHTML = products.map((p, index) => `
+    // Perhatikan pada tombol Delete, kita sekarang menggunakan p.id (ID dari Firebase)
+    tbody.innerHTML = products.map((p) => `
         <tr>
-            <td>${p.id}</td>
+            <td><span style="font-size:10px; color:#666;">${p.id}</span></td>
             <td><strong>${p.name}</strong></td>
             <td><span class="badge" style="margin:0;">${p.category}</span></td>
             <td>${formatRupiah(p.price)}</td>
             <td>
                 <button class="btn-secondary" style="padding: 6px; font-size:12px;" onclick="openEditModal('${p.id}')">Edit</button>
-                <button class="btn-secondary" style="padding: 6px; font-size:12px; color:#FF3B3B; border-color:#FF3B3B;" onclick="adminDeleteProduct(${index})">Delete</button>
+                <button class="btn-secondary" style="padding: 6px; font-size:12px; color:#FF3B3B; border-color:#FF3B3B;" onclick="adminDeleteProduct('${p.id}')">Delete</button>
             </td>
         </tr>
     `).join('');
 };
 
-const adminDeleteProduct = (index) => {
-    if(confirm('Delete product?')) {
-        let products = getProducts();
-        products.splice(index, 1);
-        localStorage.setItem('crs_products', JSON.stringify(products));
-        loadAdminData(); renderProducts(); showToast("Deleted");
+const adminDeleteProduct = async (id) => {
+    if(confirm('Yakin ingin menghapus produk ini dari Server Firebase?')) {
+        try {
+            await window.deleteDoc(window.doc(window.db, "products", id));
+            await fetchProductsFromDB(); // Download ulang data terbaru
+            loadAdminData(); 
+            renderProducts(); 
+            showToast("Produk Berhasil Dihapus", "success");
+        } catch (error) {
+            console.error("Gagal menghapus:", error);
+            showToast("Gagal menghapus produk", "error");
+        }
     }
 };
 
-const openAddProductModal = () => {
+const openAddProductModal = async () => {
     const name = prompt("Enter Name:"); if(!name) return;
     const cat = prompt("Enter Category:", "Panel");
     const price = parseInt(prompt("Enter Price:", "100000"));
+    
     if(name && cat && price) {
-        let products = getProducts();
-        products.push({ id: 'p' + Date.now(), name, category: cat, price, icon: 'fa-box', desc: 'Premium tool' });
-        localStorage.setItem('crs_products', JSON.stringify(products));
-        loadAdminData(); renderProducts(); showToast("Added!");
+        try {
+            showToast("Sedang menambahkan ke Server...", "success");
+            await window.addDoc(window.collection(window.db, "products"), {
+                name: name,
+                category: cat,
+                price: price,
+                icon: 'fa-box',
+                desc: 'Premium tool'
+            });
+            await fetchProductsFromDB(); // Download ulang data terbaru
+            loadAdminData(); 
+            renderProducts(); 
+            showToast("Produk Berhasil Ditambahkan!");
+        } catch (error) {
+            console.error("Gagal menambah:", error);
+            showToast("Gagal menambahkan produk", "error");
+        }
     }
 };
 
-// Logika Edit Product
+// Logika Edit Product Firebase
 const openEditModal = (id) => {
-    const p = getProducts().find(prod => prod.id === id);
+    const p = globalProducts.find(prod => prod.id === id);
     if (!p) return;
     editProductId = id;
     document.getElementById('edit-p-name').value = p.name;
     document.getElementById('edit-p-cat').value = p.category;
     document.getElementById('edit-p-price').value = p.price;
-    document.getElementById('edit-p-icon').value = p.icon;
-    document.getElementById('edit-p-desc').value = p.desc;
+    document.getElementById('edit-p-icon').value = p.icon || "fa-box";
+    document.getElementById('edit-p-desc').value = p.desc || "";
     document.getElementById('edit-product-modal').classList.remove('hidden');
 };
 
-const saveEditProduct = () => {
-    let products = getProducts();
-    const index = products.findIndex(p => p.id === editProductId);
-    if (index > -1) {
-        products[index].name = document.getElementById('edit-p-name').value;
-        products[index].category = document.getElementById('edit-p-cat').value;
-        products[index].price = parseInt(document.getElementById('edit-p-price').value);
-        products[index].icon = document.getElementById('edit-p-icon').value;
-        products[index].desc = document.getElementById('edit-p-desc').value;
+const saveEditProduct = async () => {
+    if (!editProductId) return;
+    
+    try {
+        const newName = document.getElementById('edit-p-name').value;
+        const newCat = document.getElementById('edit-p-cat').value;
+        const newPrice = parseInt(document.getElementById('edit-p-price').value);
+        const newIcon = document.getElementById('edit-p-icon').value;
+        const newDesc = document.getElementById('edit-p-desc').value;
         
-        localStorage.setItem('crs_products', JSON.stringify(products));
+        showToast("Menyimpan ke server...");
+        
+        await window.updateDoc(window.doc(window.db, "products", editProductId), {
+            name: newName,
+            category: newCat,
+            price: newPrice,
+            icon: newIcon,
+            desc: newDesc
+        });
+        
+        await fetchProductsFromDB(); // Download ulang data terbaru dari database
         loadAdminData();
         renderProducts();
         closeModal('edit-product-modal');
         showToast("Product Updated Successfully!");
+    } catch (error) {
+        console.error("Gagal mengupdate:", error);
+        showToast("Gagal mengupdate produk", "error");
     }
 };
