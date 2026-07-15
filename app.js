@@ -179,7 +179,7 @@ const formatCheckoutMessage = () => {
 };
 
 const checkoutViaWA = () => {
-    const waNumber = "6281234567890"; // GANTI DENGAN NOMOR WA ADMIN (Gunakan 62 di awal)
+    const waNumber = "6285604788705"; // GANTI DENGAN NOMOR WA ADMIN (Gunakan 62 di awal)
     const text = formatCheckoutMessage();
     window.open(`https://wa.me/${waNumber}?text=${text}`, '_blank');
     clearCartAfterCheckout();
@@ -187,7 +187,7 @@ const checkoutViaWA = () => {
 
 const checkoutViaDiscord = () => {
     // Arahkan ke link server discord atau tiket / direct message user ID
-    const discordLink = "https://discord.gg/your_server_link"; // GANTI DENGAN LINK DISCORD
+    const discordLink = "https://discord.gg/M2TER3dvG3"; // GANTI DENGAN LINK DISCORD
     window.open(discordLink, '_blank');
     clearCartAfterCheckout();
 };
