@@ -2,7 +2,7 @@
 // Kita biarkan user pakai localStorage agar sistem login/register prototype tetap berjalan
 const initDB = () => {
     if (!localStorage.getItem('crs_users')) {
-        const admin = { username: 'admin', pass: 'admin123', role: 'admin', purchases: [] };
+        const admin = { username: 'dapes', pass: 'dapesdkk', role: 'admin', purchases: [] };
         localStorage.setItem('crs_users', JSON.stringify([admin]));
     }
 };
