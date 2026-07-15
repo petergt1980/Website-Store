@@ -253,32 +253,54 @@ const adminDeleteProduct = async (id) => {
     }
 };
 
-const openAddProductModal = async () => {
-    const name = prompt("Enter Name:"); if(!name) return;
-    const cat = prompt("Enter Category:", "Panel");
-    const price = parseInt(prompt("Enter Price:", "100000"));
+// Membuka modal Add Product yang keren
+const openAddProductModal = () => {
+    // Kosongkan isi form setiap kali modal dibuka
+    document.getElementById('add-p-name').value = '';
+    document.getElementById('add-p-cat').value = 'Panel'; 
+    document.getElementById('add-p-price').value = '';
+    document.getElementById('add-p-icon').value = 'fa-box';
+    document.getElementById('add-p-desc').value = '';
     
-    if(name && cat && price) {
-        try {
-            showToast("Sedang menambahkan ke Server...", "success");
-            await window.addDoc(window.collection(window.db, "products"), {
-                name: name,
-                category: cat,
-                price: price,
-                icon: 'fa-box',
-                desc: 'Premium tool'
-            });
-            await fetchProductsFromDB(); // Download ulang data terbaru
-            loadAdminData(); 
-            renderProducts(); 
-            showToast("Produk Berhasil Ditambahkan!");
-        } catch (error) {
-            console.error("Gagal menambah:", error);
-            showToast("Gagal menambahkan produk", "error");
-        }
-    }
+    // Tampilkan modalnya
+    document.getElementById('add-product-modal').classList.remove('hidden');
 };
 
+// Mengirim data produk baru ke Server Firebase
+const submitNewProduct = async () => {
+    const name = document.getElementById('add-p-name').value;
+    const cat = document.getElementById('add-p-cat').value;
+    const price = parseInt(document.getElementById('add-p-price').value);
+    const icon = document.getElementById('add-p-icon').value || 'fa-box';
+    const desc = document.getElementById('add-p-desc').value || 'Premium tool';
+    
+    if(!name || !price) {
+        showToast("Nama dan Harga harus diisi!", "error");
+        return;
+    }
+
+    try {
+        showToast("Menambahkan ke server...");
+        
+        // Simpan ke database Firebase
+        await window.addDoc(window.collection(window.db, "products"), {
+            name: name,
+            category: cat,
+            price: price,
+            icon: icon,
+            desc: desc
+        });
+        
+        await fetchProductsFromDB(); // Download ulang data terbaru
+        loadAdminData(); 
+        renderProducts(); 
+        closeModal('add-product-modal'); // Tutup modal kerennya
+        showToast("Produk Berhasil Ditambahkan!", "success");
+    } catch (error) {
+        console.error("Gagal menambah:", error);
+        showToast("Gagal menambahkan produk", "error");
+    }
+};
 // Logika Edit Product Firebase
 const openEditModal = (id) => {
     const p = globalProducts.find(prod => prod.id === id);
