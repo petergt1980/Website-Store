@@ -1,5 +1,4 @@
 // --- Database User Mockup (LocalStorage) ---
-// Kita biarkan user pakai localStorage agar sistem login/register prototype tetap berjalan
 const initDB = () => {
     if (!localStorage.getItem('crs_users')) {
         const admin = { username: 'dapes', pass: 'dapesdkk', role: 'admin', purchases: [] };
@@ -18,10 +17,9 @@ const fetchProductsFromDB = async () => {
         const querySnapshot = await window.getDocs(window.collection(window.db, "products"));
         let products = [];
         querySnapshot.forEach((doc) => {
-            // Menggabungkan ID document Firebase dengan isi datanya
             products.push({ id: doc.id, ...doc.data() });
         });
-        globalProducts = products; // Simpan ke variabel global
+        globalProducts = products; 
         return products;
     } catch (error) {
         console.error("Error mengambil data dari Firebase: ", error);
@@ -32,7 +30,7 @@ const fetchProductsFromDB = async () => {
 window.onload = async () => {
     initDB();
     checkSession();
-    await fetchProductsFromDB(); // Download data produk dari Firebase saat web dibuka
+    await fetchProductsFromDB(); 
     renderProducts();
 };
 
@@ -104,7 +102,7 @@ const logout = () => {
 
 // --- Store & Products ---
 const renderProducts = (searchQuery = '') => {
-    const products = globalProducts; // Ambil dari data yg sudah didownload
+    const products = globalProducts; 
     const homeContainer = document.getElementById('home-products');
     const storeContainer = document.getElementById('store-products');
     
@@ -134,7 +132,7 @@ const filterCategory = (cat) => {
 
 const filterProducts = () => renderProducts(document.getElementById('search-input').value);
 
-// --- Cart & Checkout (WA/Discord Redirect) ---
+// --- Cart & Checkout ---
 const addToCart = (id) => {
     cart.push(globalProducts.find(p => p.id === id));
     document.getElementById('cart-count').innerText = cart.length;
@@ -177,7 +175,6 @@ const processCheckout = () => {
     if (cart.length === 0) return showToast("Cart is empty!", "error");
     if (!currentUser) { showToast("Login to checkout", "error"); return navigate('auth'); }
     
-    // Tampilkan modal pilihan WA/Discord
     document.getElementById('checkout-contact-modal').classList.remove('hidden');
 };
 
@@ -223,7 +220,6 @@ let editProductId = null;
 const loadAdminData = () => {
     const products = globalProducts;
     const tbody = document.getElementById('admin-product-list');
-    // Perhatikan pada tombol Delete, kita sekarang menggunakan p.id (ID dari Firebase)
     tbody.innerHTML = products.map((p) => `
         <tr>
             <td><span style="font-size:10px; color:#666;">${p.id}</span></td>
@@ -242,7 +238,7 @@ const adminDeleteProduct = async (id) => {
     if(confirm('Yakin ingin menghapus produk ini dari Server Firebase?')) {
         try {
             await window.deleteDoc(window.doc(window.db, "products", id));
-            await fetchProductsFromDB(); // Download ulang data terbaru
+            await fetchProductsFromDB(); 
             loadAdminData(); 
             renderProducts(); 
             showToast("Produk Berhasil Dihapus", "success");
@@ -255,14 +251,12 @@ const adminDeleteProduct = async (id) => {
 
 // Membuka modal Add Product yang keren
 const openAddProductModal = () => {
-    // Kosongkan isi form setiap kali modal dibuka
     document.getElementById('add-p-name').value = '';
     document.getElementById('add-p-cat').value = 'Panel'; 
     document.getElementById('add-p-price').value = '';
     document.getElementById('add-p-icon').value = 'fa-box';
     document.getElementById('add-p-desc').value = '';
     
-    // Tampilkan modalnya
     document.getElementById('add-product-modal').classList.remove('hidden');
 };
 
@@ -282,7 +276,6 @@ const submitNewProduct = async () => {
     try {
         showToast("Menambahkan ke server...");
         
-        // Simpan ke database Firebase
         await window.addDoc(window.collection(window.db, "products"), {
             name: name,
             category: cat,
@@ -291,16 +284,17 @@ const submitNewProduct = async () => {
             desc: desc
         });
         
-        await fetchProductsFromDB(); // Download ulang data terbaru
+        await fetchProductsFromDB(); 
         loadAdminData(); 
         renderProducts(); 
-        closeModal('add-product-modal'); // Tutup modal kerennya
+        closeModal('add-product-modal'); 
         showToast("Produk Berhasil Ditambahkan!", "success");
     } catch (error) {
         console.error("Gagal menambah:", error);
         showToast("Gagal menambahkan produk", "error");
     }
 };
+
 // Logika Edit Product Firebase
 const openEditModal = (id) => {
     const p = globalProducts.find(prod => prod.id === id);
@@ -334,7 +328,7 @@ const saveEditProduct = async () => {
             desc: newDesc
         });
         
-        await fetchProductsFromDB(); // Download ulang data terbaru dari database
+        await fetchProductsFromDB(); 
         loadAdminData();
         renderProducts();
         closeModal('edit-product-modal');
